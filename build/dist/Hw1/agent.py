@@ -37,6 +37,7 @@ class IdaStarSearchAgent(SearchAgent):
 		self.heuristic = manhattan_heuristic
 		self.cutoff = 0  # heuristic of starting position
 		self.starting_pos = (0, 0)
+		self.old_cutoff = sys.maxint
 		self.next_cutoff = sys.maxint
 
 	def reset(self):
@@ -62,7 +63,6 @@ class IdaStarSearchAgent(SearchAgent):
 		# return action
 		self.starting_pos = (r, c)
 		get_environment().mark_maze_white(r, c)
-		print self, time, observations
 		return self.act(observations)
 
 	def act(self, time, observations, reward):
@@ -98,15 +98,15 @@ class IdaStarSearchAgent(SearchAgent):
 		adjlist = self.adjlist[current_cell]
 		# sort adjlist from smallest f value to largest f value
 		sorted(adjlist, key=lambda x: self.fvals[x])
-		print adjlist
+		# print adjlist
 		print {self.fvals[x] for x in adjlist}
 		k = 0
-		# while k < len(adjlist) and (adjlist[k] in self.visited or self.fvals[current_cell] > self.cutoff):
 		while k < len(adjlist) and (
 				adjlist[k] in self.visited or self.fvals[adjlist[k]] > self.cutoff):
-			if self.fvals[adjlist[k]] < self.next_cutoff:
+			if (self.fvals[current_cell] < self.fvals[adjlist[k]] < self.next_cutoff):
 				self.next_cutoff = self.fvals[adjlist[k]]
 				print "next_cutoff: %d" % self.next_cutoff
+			print "next_cutoff: %d" % self.next_cutoff
 			k += 1
 		# if we don't have other neighbors to visit, back up
 		if k == len(adjlist):
@@ -116,8 +116,9 @@ class IdaStarSearchAgent(SearchAgent):
 				get_environment().cleanup()
 				get_environment().mark_maze_white(r, c)
 				print "Should be setting cutoff to next_cutoff %d" % self.next_cutoff
-				self.cutoff = self.next_cutoff
-				self.next_cutoff = sys.maxint
+				self.cutoff += 2
+				# self.cutoff = self.next_cutoff
+				# self.next_cutoff = sys.maxint
 			else:
 				next_cell = self.parents[current_cell]
 				# self.visited.discard(next_cell)
