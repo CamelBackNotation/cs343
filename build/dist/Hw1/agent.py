@@ -44,12 +44,17 @@ class IdaStarSearchAgent(SearchAgent):
 		"""
         Reset the agent
         """
-		pass
+		print "\t\tReset"
+		self.visited = set([])
+		self.parents = {}
+		self.backpointers = {}
+		self.starting_pos = None
 
 	def initialize(self, init_info):
 		"""
         Initializes the agent upon reset
         """
+		print "\t\tInitialize"
 		self.action_info = init_info.actions
 		return True
 
@@ -57,15 +62,20 @@ class IdaStarSearchAgent(SearchAgent):
 		"""
         Called on the first move
         """
+		print "\t\tStarting"
 		r = observations[0]
 		c = observations[1]
 		self.cutoff = self.heuristic(r, c)
 		# return action
 		self.starting_pos = (r, c)
 		get_environment().mark_maze_white(r, c)
-		return self.act(observations)
+		return self.ida_action(observations)
+		# return self.act(time, observations)
 
 	def act(self, time, observations, reward):
+		return self.ida_action(observations)
+
+	def ida_action(self, observations):
 		"""
         Called every time the agent needs to take an action
         """
@@ -98,15 +108,16 @@ class IdaStarSearchAgent(SearchAgent):
 		adjlist = self.adjlist[current_cell]
 		# sort adjlist from smallest f value to largest f value
 		sorted(adjlist, key=lambda x: self.fvals[x])
-		# print adjlist
 		print {self.fvals[x] for x in adjlist}
 		k = 0
 		while k < len(adjlist) and (
 				adjlist[k] in self.visited or self.fvals[adjlist[k]] > self.cutoff):
-			if (self.fvals[current_cell] < self.fvals[adjlist[k]] < self.next_cutoff):
+			if (self.fvals[current_cell] < self.fvals[adjlist[k]]
+				    and self.fvals[adjlist[k]] < self.next_cutoff
+					and adjlist[k] not in self.visited
+			        and self.next_cutoff > self.cutoff):
 				self.next_cutoff = self.fvals[adjlist[k]]
 				print "next_cutoff: %d" % self.next_cutoff
-			print "next_cutoff: %d" % self.next_cutoff
 			k += 1
 		# if we don't have other neighbors to visit, back up
 		if k == len(adjlist):
@@ -121,7 +132,6 @@ class IdaStarSearchAgent(SearchAgent):
 				# self.next_cutoff = sys.maxint
 			else:
 				next_cell = self.parents[current_cell]
-				# self.visited.discard(next_cell)
 		else:  # otherwise visit the next place
 			next_cell = adjlist[k]
 		self.visited.add(current_cell)  # add this location to visited list
