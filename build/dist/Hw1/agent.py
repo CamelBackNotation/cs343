@@ -37,14 +37,12 @@ class IdaStarSearchAgent(SearchAgent):
 		self.heuristic = manhattan_heuristic
 		self.cutoff = 0  # heuristic of starting position
 		self.starting_pos = (0, 0)
-		self.old_cutoff = sys.maxint
 		self.next_cutoff = sys.maxint
 
 	def reset(self):
 		"""
         Reset the agent
         """
-		print "\t\tReset"
 		self.visited = set([])
 		self.parents = {}
 		self.backpointers = {}
@@ -54,7 +52,6 @@ class IdaStarSearchAgent(SearchAgent):
 		"""
         Initializes the agent upon reset
         """
-		print "\t\tInitialize"
 		self.action_info = init_info.actions
 		return True
 
@@ -62,7 +59,6 @@ class IdaStarSearchAgent(SearchAgent):
 		"""
         Called on the first move
         """
-		print "\t\tStarting"
 		r = observations[0]
 		c = observations[1]
 		self.cutoff = self.heuristic(r, c)
@@ -70,7 +66,8 @@ class IdaStarSearchAgent(SearchAgent):
 		self.starting_pos = (r, c)
 		get_environment().mark_maze_white(r, c)
 		return self.ida_action(observations)
-		# return self.act(time, observations)
+
+	# return self.act(time, observations)
 
 	def act(self, time, observations, reward):
 		return self.ida_action(observations)
@@ -81,7 +78,6 @@ class IdaStarSearchAgent(SearchAgent):
         """
 		r = observations[0]
 		c = observations[1]
-		# debugging purposes
 		d = self.get_distance(r, c)
 		h = self.heuristic(r, c)
 		f = d + h
@@ -111,13 +107,14 @@ class IdaStarSearchAgent(SearchAgent):
 		print {self.fvals[x] for x in adjlist}
 		k = 0
 		while k < len(adjlist) and (
-				adjlist[k] in self.visited or self.fvals[adjlist[k]] > self.cutoff):
+						adjlist[k] in self.visited or self.fvals[adjlist[k]] > self.cutoff):
 			if (self.fvals[current_cell] < self.fvals[adjlist[k]]
-				    and self.fvals[adjlist[k]] < self.next_cutoff
-					and adjlist[k] not in self.visited
-			        and self.next_cutoff > self.cutoff):
+			    and self.fvals[adjlist[k]] < self.next_cutoff
+			    and adjlist[k] not in self.visited
+			    and self.next_cutoff > self.cutoff):
 				self.next_cutoff = self.fvals[adjlist[k]]
-				print "next_cutoff: %d" % self.next_cutoff
+			print "inside ofwhile loop we check to see next_cutoff %d" % self.next_cutoff
+
 			k += 1
 		# if we don't have other neighbors to visit, back up
 		if k == len(adjlist):
@@ -126,10 +123,9 @@ class IdaStarSearchAgent(SearchAgent):
 				self.visited = set([])
 				get_environment().cleanup()
 				get_environment().mark_maze_white(r, c)
-				print "Should be setting cutoff to next_cutoff %d" % self.next_cutoff
-				self.cutoff += 2
-				# self.cutoff = self.next_cutoff
-				# self.next_cutoff = sys.maxint
+				self.cutoff = self.next_cutoff
+				self.next_cutoff = sys.maxint
+				print "cutoff is now %d" % self.cutoff
 			else:
 				next_cell = self.parents[current_cell]
 		else:  # otherwise visit the next place
@@ -141,13 +137,12 @@ class IdaStarSearchAgent(SearchAgent):
 		action = get_action_index((dr, dc))
 		v = self.action_info.get_instance()  # make the action vector to return
 		if action is not None and observations[2 + action] == 0:
-			v[0] = action # if yes, do that action!
+			v[0] = action  # if yes, do that action!
 		else:
-			# get_environment().teleport(self, r2, c2)
+			get_environment().teleport(self, next_cell[0], next_cell[1])
 			v[0] = MAZE_NULL_MOVE
 		# remember how to get back
 		if next_cell not in self.backpointers:
-			# self.backpointers[next_cell] = (current_cell[0], current_cell[1])
 			self.backpointers[next_cell] = current_cell
 		print "Cutoff: %d" % self.cutoff
 		return v
